@@ -1,9 +1,13 @@
 const WIDTH = 800;
 const HEIGHT = (WIDTH * 9) / 16;
-const nodes = [];
-const edges = [];
-const vis = [];
-let nodeCount = 0;
+const nodes = [
+  [0.4 * WIDTH, 0.5 * HEIGHT],
+  [0.6 * WIDTH, 0.5 * HEIGHT],
+];
+const edges = [[1], []];
+const vis = [0, 0];
+const imp = [0.5, 0.5];
+let nodeCount = 2;
 let selNode = -1;
 let visSum = 0;
 let pos = 0;
@@ -20,7 +24,7 @@ function drawArrow(x1, y1, x2, y2) {
   rotate(angle);
   fill(0);
   noStroke();
-  triangle(0, 0, -18, -9, -18, 9);
+  triangle(0, 0, -20, -9, -20, 9);
   pop();
 }
 
@@ -29,8 +33,12 @@ function addNode(x, y) {
   edges.push([]);
   nodeCount++;
 
-  for (let i = 0; i < nodeCount - 1; i++) vis[i] = 1;
+  for (let i = 0; i < nodeCount - 1; i++) {
+    vis[i] = 1;
+    imp[i] = 1 / nodeCount;
+  }
   vis.push(1);
+  imp.push(1 / nodeCount);
   visSum = nodeCount;
 }
 
@@ -38,6 +46,22 @@ function addEdge(a, b) {
   edges[a].push(b);
   for (let i = 0; i < nodeCount; i++) vis[i] = 1;
   visSum = nodeCount;
+}
+
+function maxVis() {
+  let res = 0;
+  vis.forEach((x) => {
+    res = res > x ? res : x;
+  });
+  return res;
+}
+
+function minVis() {
+  let res = maxVis();
+  vis.forEach((x) => {
+    res = res < x ? res : x;
+  });
+  return res;
 }
 
 function mousePressed() {
@@ -57,9 +81,20 @@ function mousePressed() {
   else selNode = -1;
 }
 
+function keyPressed() {
+  if (key === "r") {
+    for (let i = 0; i < nodeCount; i++) vis[i] = 1;
+    visSum = nodeCount;
+  }
+}
+
 function setup() {
   createCanvas(WIDTH, HEIGHT);
   background(240);
+  setInterval(() => {
+    console.log(vis);
+    console.log(imp);
+  }, 1000);
 }
 
 function draw() {
@@ -78,12 +113,8 @@ function draw() {
       i === selNode ? 0 : 255
     );
     strokeWeight(3);
-    fill(
-      127 + 128 * (1 - vis[i] / (visSum + 0.01)),
-      255 * (1 - vis[i] / (visSum + 0.01)),
-      0
-    );
-    circle(nodes[i][0], nodes[i][1], 15);
+    fill(127 + 128 * (1 - imp[i]), 255 * (1 - imp[i]), 0);
+    circle(nodes[i][0], nodes[i][1], 18);
   }
 
   // 랜덤 서퍼 트릭
@@ -94,6 +125,11 @@ function draw() {
       else pos = edges[pos][Math.floor(Math.random() * edges[pos].length)];
       vis[pos]++;
       visSum++;
+    }
+    for (let i = 0; i < nodeCount; i++) {
+      if (maxVis() != minVis())
+        imp[i] = (vis[i] - minVis()) / (maxVis() - minVis());
+      else imp[i] = 0.5;
     }
   }
 }
